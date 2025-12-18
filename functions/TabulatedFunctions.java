@@ -19,7 +19,7 @@ public final class TabulatedFunctions {
         TabulatedFunctions.factory = factory;
     }
     
-    //МЕТОДЫ СОЗДАНИЯ ЧЕРЕЗ ФАБРИКУ 
+    // МЕТОДЫ СОЗДАНИЯ ЧЕРЕЗ ФАБРИКУ
     
     public static TabulatedFunction createTabulatedFunction(double leftX, double rightX, int pointsCount) {
         return factory.createTabulatedFunction(leftX, rightX, pointsCount);
@@ -33,7 +33,7 @@ public final class TabulatedFunctions {
         return factory.createTabulatedFunction(points);
     }
     
-    // МЕТОДЫ СОЗДАНИЯ ЧЕРЕЗ РЕФЛЕКСИЮ 
+    //МЕТОДЫ СОЗДАНИЯ ЧЕРЕЗ РЕФЛЕКСИЮ
     
     public static TabulatedFunction createTabulatedFunction(Class<? extends TabulatedFunction> functionClass,
                                                              double leftX, double rightX, int pointsCount) {
@@ -109,6 +109,9 @@ public final class TabulatedFunctions {
     // МЕТОДЫ ТАБУЛИРОВАНИЯ
     
     public static TabulatedFunction tabulate(Function function, double leftX, double rightX, int pointsCount) {
+        if (function == null) {
+            throw new IllegalArgumentException("Функция не может быть null");
+        }
         if (leftX < function.getLeftDomainBorder() || rightX > function.getRightDomainBorder()) {
             throw new IllegalArgumentException("Границы табулирования выходят за область определения функции");
         }
@@ -134,6 +137,9 @@ public final class TabulatedFunctions {
     // Табулирование с указанием класса через рефлексию
     public static TabulatedFunction tabulate(Class<? extends TabulatedFunction> functionClass,
                                              Function function, double leftX, double rightX, int pointsCount) {
+        if (function == null) {
+            throw new IllegalArgumentException("Функция не может быть null");
+        }
         if (leftX < function.getLeftDomainBorder() || rightX > function.getRightDomainBorder()) {
             throw new IllegalArgumentException("Границы табулирования выходят за область определения функции");
         }
@@ -156,7 +162,7 @@ public final class TabulatedFunctions {
         return createTabulatedFunction(functionClass, points);
     }
     
-    // МЕТОДЫ ВВОДА/ВЫВОДА
+    //МЕТОДЫ ВВОДА/ВЫВОДА 
     
     public static void outputTabulatedFunction(TabulatedFunction function, OutputStream out) throws IOException {
         DataOutputStream dos = new DataOutputStream(out);
@@ -171,6 +177,17 @@ public final class TabulatedFunctions {
         dos.flush();
     }
     
+    // ПЕРЕГРУЖЕННЫЙ МЕТОД ВЫВОДА С РЕФЛЕКСИЕЙ 
+    public static void outputTabulatedFunction(Class<? extends TabulatedFunction> functionClass,
+                                              TabulatedFunction function, OutputStream out) throws IOException {
+        // Проверяем, что функция является экземпляром указанного класса
+        if (!functionClass.isInstance(function)) {
+            throw new IllegalArgumentException("Функция должна быть экземпляром класса " + 
+                                               functionClass.getName());
+        }
+        outputTabulatedFunction(function, out);
+    }
+    
     public static TabulatedFunction inputTabulatedFunction(InputStream in) throws IOException {
         DataInputStream dis = new DataInputStream(in);
         int pointsCount = dis.readInt();
@@ -183,6 +200,49 @@ public final class TabulatedFunctions {
         }
         
         return createTabulatedFunction(points);
+    }
+    
+    // Перегруженный метод чтения с рефлексией
+    public static TabulatedFunction inputTabulatedFunction(Class<? extends TabulatedFunction> functionClass,
+                                                            InputStream in) throws IOException {
+        DataInputStream dis = new DataInputStream(in);
+        int pointsCount = dis.readInt();
+        FunctionPoint[] points = new FunctionPoint[pointsCount];
+        
+        for (int i = 0; i < pointsCount; i++) {
+            double x = dis.readDouble();
+            double y = dis.readDouble();
+            points[i] = new FunctionPoint(x, y);
+        }
+        
+        // Используем рефлексию для создания объекта указанного класса
+        return createTabulatedFunction(functionClass, points);
+    }
+    
+    public static void writeTabulatedFunction(TabulatedFunction function, Writer out) throws IOException {
+        PrintWriter pw = new PrintWriter(out);
+        pw.print(function.getPointsCount());
+        
+        for (int i = 0; i < function.getPointsCount(); i++) {
+            FunctionPoint point = function.getPoint(i);
+            pw.print(" ");
+            pw.print(point.getX());
+            pw.print(" ");
+            pw.print(point.getY());
+        }
+        
+        pw.flush();
+    }
+    
+    // ПЕРЕГРУЖЕННЫЙ МЕТОД ЗАПИСИ С РЕФЛЕКСИЕЙ
+    public static void writeTabulatedFunction(Class<? extends TabulatedFunction> functionClass,
+                                             TabulatedFunction function, Writer out) throws IOException {
+        // Проверяем, что функция является экземпляром указанного класса
+        if (!functionClass.isInstance(function)) {
+            throw new IllegalArgumentException("Функция должна быть экземпляром класса " + 
+                                               functionClass.getName());
+        }
+        writeTabulatedFunction(function, out);
     }
     
     public static TabulatedFunction readTabulatedFunction(Reader in) throws IOException {
@@ -203,5 +263,28 @@ public final class TabulatedFunctions {
         }
         
         return createTabulatedFunction(points);
+    }
+    
+    // Перегруженный метод чтения с рефлексией
+    public static TabulatedFunction readTabulatedFunction(Class<? extends TabulatedFunction> functionClass,
+                                                           Reader in) throws IOException {
+        StreamTokenizer tokenizer = new StreamTokenizer(in);
+        tokenizer.parseNumbers();
+        
+        tokenizer.nextToken();
+        int pointsCount = (int) tokenizer.nval;
+        
+        FunctionPoint[] points = new FunctionPoint[pointsCount];
+        
+        for (int i = 0; i < pointsCount; i++) {
+            tokenizer.nextToken();
+            double x = tokenizer.nval;
+            tokenizer.nextToken();
+            double y = tokenizer.nval;
+            points[i] = new FunctionPoint(x, y);
+        }
+        
+        // Используем рефлексию для создания объекта указанного класса
+        return createTabulatedFunction(functionClass, points);
     }
 }

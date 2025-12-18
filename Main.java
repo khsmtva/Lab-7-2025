@@ -6,201 +6,165 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("=== ЛАБОРАТОРНАЯ РАБОТА №7 ===");
         
-        System.out.println("\n--- ЗАДАНИЕ 1: Проверка итератора ---");
+        System.out.println("\n--- ЗАДАНИЕ 1:");
         testIterator();
         
-        System.out.println("\n--- ЗАДАНИЕ 2: Проверка фабричного метода ---");
+        System.out.println("\n--- ЗАДАНИЕ 2:");
         testFactoryMethod();
         
-        System.out.println("\n--- ЗАДАНИЕ 3: Проверка рефлексии ---");
+        System.out.println("\n--- ЗАДАНИЕ 3:");
         testReflection();
         
-        System.out.println("\n=== Все задания лабораторной работы выполнены! ===");
+        System.out.println("\n=== Все задания выполнены ===");
     }
     
-    // ЗАДАНИЕ 1: Итератор
     public static void testIterator() {
         System.out.println("\n1. Тест ArrayTabulatedFunction:");
-        FunctionPoint[] points1 = {
+        FunctionPoint[] points = {
             new FunctionPoint(0, 0),
             new FunctionPoint(1, 1),
-            new FunctionPoint(2, 4),
-            new FunctionPoint(3, 9)
+            new FunctionPoint(2, 4)
         };
-        TabulatedFunction arrayFunc = new ArrayTabulatedFunction(points1);
-        System.out.println("   Итерация по точкам (for-each):");
+        
+        TabulatedFunction arrayFunc = new ArrayTabulatedFunction(points);
+        System.out.println("   Итерация через for-each:");
         for (FunctionPoint p : arrayFunc) {
             System.out.println("     " + p);
         }
         
         System.out.println("\n2. Тест LinkedListTabulatedFunction:");
-        TabulatedFunction listFunc = new LinkedListTabulatedFunction(points1);
-        System.out.println("   Итерация по точкам (for-each):");
+        TabulatedFunction listFunc = new LinkedListTabulatedFunction(points);
+        System.out.println("   Итерация через for-each:");
         for (FunctionPoint p : listFunc) {
             System.out.println("     " + p);
         }
         
-        System.out.println("\n3. Тест с явным итератором:");
-        TabulatedFunction func = new ArrayTabulatedFunction(0, 10, 5);
-        Iterator<FunctionPoint> iterator = func.iterator();
-        System.out.println("   Точки функции от 0 до 10 (5 точек):");
-        while (iterator.hasNext()) {
-            FunctionPoint point = iterator.next();
-            System.out.println("     X: " + point.getX() + ", Y: " + point.getY());
+        System.out.println("\n3. Тест итератора вручную:");
+        Iterator<FunctionPoint> it = arrayFunc.iterator();
+        while (it.hasNext()) {
+            System.out.println("     " + it.next());
         }
         
-        // Тест исключения UnsupportedOperationException
-        System.out.println("\n4. Тест исключения при удалении:");
+        System.out.println("\n4. Тест исключений:");
         try {
-            TabulatedFunction testFunc = new ArrayTabulatedFunction(points1);
-            Iterator<FunctionPoint> it = testFunc.iterator();
-            it.next();
-            it.remove(); // Должно бросить исключение
-            System.out.println("   ОШИБКА: Должно было быть исключение!");
+            Iterator<FunctionPoint> iterator = arrayFunc.iterator();
+            iterator.next();
+            iterator.remove();
         } catch (UnsupportedOperationException e) {
-            System.out.println("   Корректно: " + e.getMessage());
+            System.out.println("   Корректно: UnsupportedOperationException - " + e.getMessage());
         }
         
-        // Тест исключения NoSuchElementException
-        System.out.println("\n5. Тест исключения при отсутствии следующего элемента:");
         try {
-            TabulatedFunction testFunc = new ArrayTabulatedFunction(points1);
-            Iterator<FunctionPoint> it = testFunc.iterator();
-            while (it.hasNext()) {
-                it.next();
-            }
-            it.next(); // Должно бросить исключение
-            System.out.println("   ОШИБКА: Должно было быть исключение!");
+            Iterator<FunctionPoint> iterator = arrayFunc.iterator();
+            while (iterator.hasNext()) iterator.next();
+            iterator.next();
         } catch (java.util.NoSuchElementException e) {
-            System.out.println("   Корректно: " + e.getMessage());
+            System.out.println("   Корректно: NoSuchElementException - " + e.getMessage());
         }
     }
     
-    // ЗАДАНИЕ 2: Фабричный метод
     public static void testFactoryMethod() {
-        System.out.println("\n1. Тест фабрики по умолчанию (ArrayTabulatedFunction):");
+        System.out.println("\n1. Тест фабрики по умолчанию:");
         Function cos = new Cos();
-        TabulatedFunction tf;
+        TabulatedFunction tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 5);
+        System.out.println("   Тип: " + tf.getClass().getSimpleName());
         
-        tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 11);
-        System.out.println("   Тип функции после tabulate: " + tf.getClass().getSimpleName());
-        System.out.println("   Количество точек: " + tf.getPointsCount());
-        
-        System.out.println("\n2. Тест смены фабрики на LinkedListTabulatedFunction:");
+        System.out.println("\n2. Смена фабрики на LinkedListTabulatedFunction:");
         TabulatedFunctions.setTabulatedFunctionFactory(
             new LinkedListTabulatedFunction.LinkedListTabulatedFunctionFactory()
         );
-        tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 11);
-        System.out.println("   Тип функции: " + tf.getClass().getSimpleName());
+        tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 5);
+        System.out.println("   Тип: " + tf.getClass().getSimpleName());
         
-        System.out.println("\n3. Тест смены фабрики обратно на ArrayTabulatedFunction:");
+        System.out.println("\n3. Возврат к ArrayTabulatedFunction:");
         TabulatedFunctions.setTabulatedFunctionFactory(
             new ArrayTabulatedFunction.ArrayTabulatedFunctionFactory()
         );
-        tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 11);
-        System.out.println("   Тип функции: " + tf.getClass().getSimpleName());
-        
-        System.out.println("\n4. Тест всех методов createTabulatedFunction:");
-        // Тест 1: по границам и количеству точек
-        TabulatedFunction tf1 = TabulatedFunctions.createTabulatedFunction(0, 10, 5);
-        System.out.println("   createTabulatedFunction(0, 10, 5): " + 
-                          tf1.getClass().getSimpleName() + ", точек: " + tf1.getPointsCount());
-        
-        // Тест 2: по границам и массиву значений
-        double[] values = {0, 2, 4, 6, 8, 10};
-        TabulatedFunction tf2 = TabulatedFunctions.createTabulatedFunction(0, 10, values);
-        System.out.println("   createTabulatedFunction(0, 10, values): " + 
-                          tf2.getClass().getSimpleName() + ", точек: " + tf2.getPointsCount());
-        
-        // Тест 3: по массиву точек
-        FunctionPoint[] points = {
-            new FunctionPoint(0, 0),
-            new FunctionPoint(5, 25),
-            new FunctionPoint(10, 100)
-        };
-        TabulatedFunction tf3 = TabulatedFunctions.createTabulatedFunction(points);
-        System.out.println("   createTabulatedFunction(points): " + 
-                          tf3.getClass().getSimpleName() + ", точек: " + tf3.getPointsCount());
+        tf = TabulatedFunctions.tabulate(cos, 0, Math.PI, 5);
+        System.out.println("   Тип: " + tf.getClass().getSimpleName());
     }
     
-    // ЗАДАНИЕ 3: Рефлексия
-public static void testReflection() {
-    System.out.println("\n1. Тест создания через рефлексию:");
-    TabulatedFunction f;
-    
-    // Тест 1: ArrayTabulatedFunction через конструктор (double, double, int)
-    f = TabulatedFunctions.createTabulatedFunction(
-        ArrayTabulatedFunction.class, 0, 10, 3);
-    System.out.println("   createTabulatedFunction(ArrayTabulatedFunction.class, 0, 10, 3):");
-    System.out.println("     Тип: " + f.getClass().getSimpleName());
-    System.out.println("     Функция: " + f);
-    
-    // Тест 2: ArrayTabulatedFunction через конструктор (double, double, double[])
-    f = TabulatedFunctions.createTabulatedFunction(
-        ArrayTabulatedFunction.class, 0, 10, new double[] {0, 5, 10});
-    System.out.println("\n   createTabulatedFunction(ArrayTabulatedFunction.class, 0, 10, [0,5,10]):");
-    System.out.println("     Тип: " + f.getClass().getSimpleName());
-    System.out.println("     Функция: " + f);
-    
-    // Тест 3: LinkedListTabulatedFunction через конструктор (FunctionPoint[])
-    f = TabulatedFunctions.createTabulatedFunction(
-        LinkedListTabulatedFunction.class, 
-        new FunctionPoint[] {
-            new FunctionPoint(0, 0),
-            new FunctionPoint(5, 25),
-            new FunctionPoint(10, 100)
-        }
-    );
-    System.out.println("\n   createTabulatedFunction(LinkedListTabulatedFunction.class, points):");
-    System.out.println("     Тип: " + f.getClass().getSimpleName());
-    System.out.println("     Функция: " + f);
-    
-    // Тест 4: tabulate с указанием класса
-    System.out.println("\n2. Тест tabulate с рефлексией:");
-    Sin sinFunc = new Sin();
-    f = TabulatedFunctions.tabulate(
-        LinkedListTabulatedFunction.class, sinFunc, 0, Math.PI, 11);
-    System.out.println("   tabulate(LinkedListTabulatedFunction.class, sin, 0, PI, 11):");
-    System.out.println("     Тип: " + f.getClass().getSimpleName());
-    System.out.println("     Количество точек: " + f.getPointsCount());
-    System.out.println("     Первая точка: " + f.getPoint(0));
-    System.out.println("     Последняя точка: " + f.getPoint(f.getPointsCount() - 1));
-    
-    // Тест 5: SimpleArrayTabulatedFunction через рефлексию
-    System.out.println("\n3. Тест SimpleArrayTabulatedFunction через рефлексию:");
-    f = TabulatedFunctions.createTabulatedFunction(
-        SimpleArrayTabulatedFunction.class, 0, 5, 4);
-    System.out.println("   createTabulatedFunction(SimpleArrayTabulatedFunction.class, 0, 5, 4):");
-    System.out.println("     Тип: " + f.getClass().getSimpleName());
-    System.out.println("     Функция: " + f);
-    
-    // Тест 6: Обработка ошибок (попытка создать несуществующий класс)
-    System.out.println("\n4. Тест обработки ошибок:");
-    try {
+    public static void testReflection() {
+        System.out.println("\n1. Создание через рефлексию:");
+        
+        TabulatedFunction f = TabulatedFunctions.createTabulatedFunction(
+            ArrayTabulatedFunction.class, 0, 10, 3);
+        System.out.println("   ArrayTabulatedFunction(0, 10, 3):");
+        System.out.println("     Тип: " + f.getClass().getSimpleName());
+        System.out.println("     Данные: " + f);
+        
         f = TabulatedFunctions.createTabulatedFunction(
-            TabulatedFunction.class, 0, 10, 3); // Интерфейс нельзя создать
-        System.out.println("   ОШИБКА: Должно было быть исключение!");
-    } catch (IllegalArgumentException e) {
-        System.out.println("   Корректно обработана ошибка: " + e.getMessage());
-        if (e.getCause() != null) {
-            System.out.println("   Причина: " + e.getCause().getClass().getSimpleName());
+            ArrayTabulatedFunction.class, 0, 10, new double[] {0, 5, 10});
+        System.out.println("\n   ArrayTabulatedFunction(0, 10, [0,5,10]):");
+        System.out.println("     Тип: " + f.getClass().getSimpleName());
+        
+        f = TabulatedFunctions.createTabulatedFunction(
+            LinkedListTabulatedFunction.class, 
+            new FunctionPoint[] {
+                new FunctionPoint(0, 0),
+                new FunctionPoint(5, 25),
+                new FunctionPoint(10, 100)
+            }
+        );
+        System.out.println("\n   LinkedListTabulatedFunction(points):");
+        System.out.println("     Тип: " + f.getClass().getSimpleName());
+        
+        System.out.println("\n2. Tabulate с рефлексией:");
+        Sin sin = new Sin();
+        f = TabulatedFunctions.tabulate(
+            LinkedListTabulatedFunction.class, sin, 0, Math.PI, 5);
+        System.out.println("   Тип: " + f.getClass().getSimpleName());
+        System.out.println("   Точек: " + f.getPointsCount());
+        
+        System.out.println("\n3. Обработка ошибок:");
+        try {
+            f = TabulatedFunctions.createTabulatedFunction(
+                TabulatedFunction.class, 0, 10, 3);
+        } catch (IllegalArgumentException e) {
+            System.out.println("   Корректно: " + e.getMessage());
+        }
+        
+        System.out.println("\n Методы ввода/вывода с рефлексией:");
+        try {
+            TabulatedFunction original = new ArrayTabulatedFunction(0, 5, 3);
+            
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            TabulatedFunctions.outputTabulatedFunction(original, baos);
+            
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(baos.toByteArray());
+            TabulatedFunction readFunc = TabulatedFunctions.inputTabulatedFunction(
+                LinkedListTabulatedFunction.class, bais);
+            
+            System.out.println("   Чтение в LinkedListTabulatedFunction: " + 
+                (original.equals(readFunc) ? "успешно" : "ошибка"));
+        } catch (Exception e) {
+            System.out.println("   Ошибка: " + e.getMessage());
+        }
+        
+        // Тест перегруженных методов записи с рефлексией
+        System.out.println("\n Тест перегруженных методов записи с рефлексией:");
+        try {
+            TabulatedFunction func = new ArrayTabulatedFunction(0, 5, 3);
+            
+            // Тест outputTabulatedFunction с рефлексией
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            TabulatedFunctions.outputTabulatedFunction(ArrayTabulatedFunction.class, func, baos);
+            System.out.println("   outputTabulatedFunction с Class: успешно");
+            
+            // Тест writeTabulatedFunction с рефлексией  
+            java.io.StringWriter sw = new java.io.StringWriter();
+            TabulatedFunctions.writeTabulatedFunction(ArrayTabulatedFunction.class, func, sw);
+            System.out.println("   writeTabulatedFunction с Class: успешно");
+            
+            // Тест ошибки при несоответствии типа
+            try {
+                TabulatedFunctions.outputTabulatedFunction(LinkedListTabulatedFunction.class, func, baos);
+            } catch (IllegalArgumentException e) {
+                System.out.println("   Ошибка при несоответствии типа: " + e.getMessage());
+            }
+            
+        } catch (Exception e) {
+            System.out.println("   Ошибка: " + e.getMessage());
         }
     }
-    
-    // Тест 7: Несуществующий конструктор (ИСПРАВЛЕНО!)
-    System.out.println("\n5. Тест вызова метода с неправильным количеством аргументов:");
-    try {
-        // Правильный вызов - нужно передать 4 аргумента
-        f = TabulatedFunctions.createTabulatedFunction(
-            ArrayTabulatedFunction.class, 0, 10, 5); // Корректно
-        System.out.println("   Корректно создана функция: " + f.getClass().getSimpleName());
-        
-        // Теперь попробуем вызвать несуществующий метод
-        // Этот тест нужно убрать или переписать по-другому
-        System.out.println("\n6. Тест вызова несуществующего метода (через try-catch):");
-        
-    } catch (IllegalArgumentException e) {
-        System.out.println("   Корректно: " + e.getMessage());
-    }
-}
 }
